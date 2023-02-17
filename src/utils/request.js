@@ -1,62 +1,40 @@
-// 导出一个axios的实例  而且这个实例要有请求拦截器 响应拦截器
+// 导出一个axios的实例 而且这个实例要有请求拦截器 响应拦截器
 import axios from 'axios'
+import { Message } from 'element-ui'
+import { getTimeStamp } from '@/utils/auth'
+// import store from '@/store'
+// import router from '@/router'
+// const TimeOut = 5400 // 定义超时时间
 const service = axios.create({
-  baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url
-  // withCredentials: true, // send cookies when cross-domain requests
-  timeout: 5000 // 超时时间
+  // 当执行 npm run dev => .eve.production 读取=> /api => 跨域代理
+  baseURL: process.env.VUE_APP_BASE_API, // npm run dev => .env.development中的公共地址 /api
+  // npm run bulid => /prod-api
+  timeout: 5000 // 设置超时时间
 }) // 创建一个axios的实例
 
-service.interceptors.request.use(config => {
-  // do something before request is sent
+// 请求拦截器
+service.interceptors.request.use()
 
-  if (store.getters.token) {
-    // let each request carry token
-    // ['X-Token'] is a custom headers key
-    // please modify it according to the actual situation
-    config.headers['X-Token'] = getToken()
-  }
-  return config
-},
-  error => {
-    // do something with request error
-    console.log(error) // for debug
-    return Promise.reject(error)
-  }) // 请求拦截器
-
+// 响应拦截器
 service.interceptors.response.use(response => {
-  const res = response.data
-
-  // if the custom code is not 20000, it is judged as an error.
-  if (res.code !== 20000) {
-    Message({
-      message: res.message || 'Error',
-      type: 'error',
-      duration: 5 * 1000
-    })
-    if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
-      // to re-login
-      MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
-        confirmButtonText: 'Re-Login',
-        cancelButtonText: 'Cancel',
-        type: 'warning'
-      }).then(() => {
-        store.dispatch('user/resetToken').then(() => {
-          location.reload()
-        })
-      })
-    }
-    return Promise.reject(new Error(res.message || 'Error'))
+  // axios 默认加了一层data
+  const { data, success, message } = response.data
+  // 要根据 success 的成功与否，决定下面的操作
+  if (success) {
+    // 执行成功
+    return data
   } else {
-    return res
+    // 业务错了，不能进 then，进 catch
+    Message.error(message) // 提示错误消息
+    return Promise.reject(new Error(message))
   }
-},
-  error => {
-    console.log('err' + error) // for debug
-    Message({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000
-    })
-    return Promise.reject(error)
-  }) // 响应拦截器
+}, error => {
+  Message.error(error.message) // 提示错误信息
+  return Promise.reject(error) // 返回执行错误，让当前的执行链跳出成功，直接进入 catch
+})
+// 检查token是否过期
+function CheckIsTimeOut() {
+  // 当前时间  - 存储的时间戳 > 时效性  false   tr
+  return (Date.now() - getTimeStamp()) / 1000 > TimeOut
+}
 export default service // 导出axios实例

@@ -36,6 +36,15 @@ module.exports = {
       warnings: false,
       errors: true
     },
+    // 配置反向代理
+    proxy: {
+      // 当地址中有 /api 的时候就会触发代理机制
+      "/api": {
+        target: 'http://ihrm.itheima.net/', // 要代理的服务器地址 这里不用写 api
+        changeOrigin: true, // 是否跨域
+        // pathRewrite: {}  重写路径，前提是不想要api
+      }
+    }
   },
   configureWebpack: {
     // provide the app's title in webpack's name field, so that
