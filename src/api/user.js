@@ -10,8 +10,20 @@ export function login(data) {
     })
 }
 
-export function getInfo(token) {
+// 获取用户资料接口
+export function getUserInfo(token) {
+    return request({
+        url: '/sys/profile',
+        method: 'POST'
+    })
+}
 
+// 根据用户ID获取用户详情
+export function getUserDetailById(id) {
+    return request({
+        url: `/sys/user/${id}`,
+        methos: 'GET'
+    })
 }
 
 export function logout() {
